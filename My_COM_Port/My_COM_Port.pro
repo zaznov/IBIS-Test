@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    comdialog.cpp
+    comdialog.cpp \
+    comport.cpp
 
 HEADERS += \
         mainwindow.h \
-    comdialog.h
+    comdialog.h \
+    comport.h
 
 FORMS += \
         mainwindow.ui \

@@ -8,18 +8,21 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     ui->setupUi(this);
-    serial = new QSerialPort(this);
+    serial = new COMPort(this);
 
+    /*setting Serial port speed*/
     QStringList SpeedPorts = { "9600", "14400", "19200", "56000", "115200", "128000", "256000" };
     ui->comboBoxBaudRate->clear();
     ui->comboBoxBaudRate->addItems(SpeedPorts);
 
+    /*setting Serial port names*/
     ui->comboBoxPorts->clear();
     const auto listOfPorts = QSerialPortInfo::availablePorts();
     for(const auto &item : listOfPorts){
         ui->comboBoxPorts->addItem(item.portName());
     }
 
+    connect(serial, SIGNAL(readyRead()), this, SLOT(readSerial()));
 }
 
 MainWindow::~MainWindow()
@@ -59,9 +62,9 @@ void MainWindow::on_pushButtonOpenCOM_clicked()
 
     serial->open(QIODevice::ReadWrite);
     if (serial->isOpen()) {
-        QMessageBox::information(this,"Информация", "Порт успешно открыт.");
+        ui->statusBar->showMessage("Serial port was open", 2000);
     } else {
-        QMessageBox::information(this,"Информация", "Порт не удалось открыть.");
+        ui->statusBar->showMessage("Unable to open serial port!", 2000);
     };
 
 }
@@ -70,8 +73,28 @@ void MainWindow::on_pushButtonCloseCOM_clicked()
 {
     serial->close();
     if (serial->isOpen()) {
-        QMessageBox::information(this,"Информация", "Порт не удалось закрыть.");
+        ui->statusBar->showMessage("Unable to close serial port", 2000);
     } else {
-        QMessageBox::information(this,"Информация", "Порт успешно закрыт.");
+        ui->statusBar->showMessage("Serial port was closed", 2000);
     }
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    QString stringToSend = ui->lineEdit_write_to_serial->text();
+    if(ui->checkBox_LF->isChecked()){
+        stringToSend += '\n';
+    }
+    serial->write(stringToSend.toUtf8());
+    ui->textEdit_transmitted->insertPlainText(stringToSend);
+}
+
+void MainWindow::readSerial()
+{
+    QByteArray responseData = serial->readAll();
+    const QString response = QString::fromUtf8(responseData);
+    ui->textEdit_received->insertPlainText(response);
+        //QTextCursor cursor = ui->textEdit_received->textCursor();
+        //cursor.movePosition(QTextCursor::Start);
+        //ui->textEdit_received->setTextCursor(cursor);
 }

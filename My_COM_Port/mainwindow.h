@@ -7,6 +7,7 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QMessageBox>
+#include "comport.h"
 
 namespace Ui {
 class MainWindow;
@@ -29,9 +30,15 @@ private slots:
 
     void on_pushButtonCloseCOM_clicked();
 
+    void on_pushButton_clicked();
+
+    void readSerial();
+
 private:
     Ui::MainWindow *ui;
-    QSerialPort *serial;
+    //QSerialPort *serial;
+    COMPort *serial;
+
 };
 
 #endif // MAINWINDOW_H
