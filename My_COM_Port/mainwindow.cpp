@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "comdialog.h"
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -21,7 +21,6 @@ MainWindow::MainWindow(QWidget *parent) :
     for(const auto &item : listOfPorts){
         ui->comboBoxPorts->addItem(item.portName());
     }
-
     connect(serial, SIGNAL(readyRead()), this, SLOT(readSerial()));
 }
 
@@ -34,7 +33,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushAditionalSetings_clicked()
 {
-    ComDialog mComDialog;
+    ComDialog mComDialog(serial);
     mComDialog.setWindowTitle("Aditional COM settings");
     mComDialog.setModal(true);
     mComDialog.exec();
@@ -52,15 +51,11 @@ void MainWindow::on_pushButtonRefreshCOM_clicked()
 
 void MainWindow::on_pushButtonOpenCOM_clicked()
 {
-
     serial->setPortName(ui->comboBoxPorts->currentText());
     serial->setBaudRate(ui->comboBoxBaudRate->currentText().toInt(), QSerialPort::AllDirections);
-    serial->setDataBits(QSerialPort::Data8);
-    serial->setParity(QSerialPort::NoParity);
-    serial->setStopBits(QSerialPort::OneStop);
-    serial->setFlowControl(QSerialPort::NoFlowControl);
-
+    if(serial->isOpen()) serial->close();
     serial->open(QIODevice::ReadWrite);
+
     if (serial->isOpen()) {
         ui->statusBar->showMessage("Serial port was open", 2000);
     } else {
@@ -94,7 +89,17 @@ void MainWindow::readSerial()
     QByteArray responseData = serial->readAll();
     const QString response = QString::fromUtf8(responseData);
     ui->textEdit_received->insertPlainText(response);
-        //QTextCursor cursor = ui->textEdit_received->textCursor();
-        //cursor.movePosition(QTextCursor::Start);
-        //ui->textEdit_received->setTextCursor(cursor);
 }
+
+
+
+void MainWindow::on_pushButton_received_clear_clicked()
+{
+    ui->textEdit_received->clear();
+}
+
+void MainWindow::on_pushButton__transmitted_clear_clicked()
+{
+    ui->textEdit_transmitted->clear();
+}
+
