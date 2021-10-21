@@ -6,7 +6,7 @@
 
 QT       += core gui serialport
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = My_COM_Port
 TEMPLATE = app
@@ -28,12 +28,14 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     comdialog.cpp \
-    comport.cpp
+    comport.cpp \
+    qcustomplot.cpp
 
 HEADERS += \
         mainwindow.h \
     comdialog.h \
-    comport.h
+    comport.h \
+    qcustomplot.h
 
 FORMS += \
         mainwindow.ui \

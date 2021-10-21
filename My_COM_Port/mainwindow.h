@@ -23,6 +23,12 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+
+private:
+
+    void makeplot();
+
+
 private slots:
     void on_pushAditionalSetings_clicked();
 
@@ -32,18 +38,39 @@ private slots:
 
     void on_pushButtonCloseCOM_clicked();
 
-    void on_pushButton_clicked();
+    void readSerial_A();
 
-    void readSerial();
+    void readSerial_B();
 
     void on_pushButton_received_clear_clicked();
 
     void on_pushButton__transmitted_clear_clicked();
 
 
+    void on_pushAditionalSetings_2_clicked();
+
+    void on_pushButtonOpenCOM_2_clicked();
+
+    void on_pushButtonCloseCOM_2_clicked();
+
+    void on_pushButton_SendSerialA_clicked();
+
+    void updateTimeTests();
+
+    void on_pushButton_SendSerialB_clicked();
+
+    void on_pushButton_received_clear_2_clicked();
+
+    void on_pushButton__transmitted_clear_2_clicked();
+
+    void updatePlot();
+
 private:
     Ui::MainWindow *ui;
-    COMPort *serial;
+    COMPort *serial_A;
+    COMPort *serial_B;
+    QTimer *mTimerTests;
+
 
 
 };
