@@ -8,10 +8,14 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     ui->setupUi(this);
+    timerTiks = 0;
     serial_A = new COMPort(this);
     serial_B = new COMPort(this);
+    mPowerSuply = new PowerSuply(serial_A, this);
     mTimerTests = new QTimer(this);
     mTimerTests->setInterval(1000);
+    mTimerMeasurements = new QTimer(this);
+    mTimerMeasurements->setInterval(1000);
     makeplot();
 
     /*setting Serial port speed*/
@@ -31,7 +35,9 @@ MainWindow::MainWindow(QWidget *parent) :
     }
     connect(serial_A, SIGNAL(readyRead()), this, SLOT(readSerial_A()));
     connect(serial_B, SIGNAL(readyRead()), this, SLOT(readSerial_B()));
+
     connect(mTimerTests, SIGNAL(timeout()), this, SLOT(updateTimeTests()));
+    connect(mTimerMeasurements, SIGNAL(timeout()), this, SLOT(updateMeasurementsStatus()));
 }
 
 MainWindow::~MainWindow()
@@ -196,21 +202,18 @@ void MainWindow::updateTimeTests()
 void MainWindow::makeplot()
 {
     // add two new graphs and set their look:
+    ui->customPlot->xAxis->setLabel("T, Minutes");
+    ui->customPlot->yAxis->setLabel("V, Volts");
+    ui->customPlot->xAxis->setRange(0, 120);
+    ui->customPlot->yAxis->setRange(22, 32);
     ui->customPlot->addGraph();
     ui->customPlot->graph(0)->setPen(QPen(Qt::blue)); // line color blue for first graph
     ui->customPlot->graph(0)->setBrush(QBrush(QColor(0, 0, 255, 20))); // first graph will be filled with translucent blue
     ui->customPlot->addGraph();
     ui->customPlot->graph(1)->setPen(QPen(Qt::red)); // line color red for second graph
-    // generate some points of data (y0 for first, y1 for second graph):
-    QVector<double> x(251), y0(251), y1(251);
-    for (int i=0; i<251; ++i)
-    {
-      x[i] = i;
-      y0[i] = qExp(-i/150.0)*qCos(i/10.0); // exponentially decaying cosine
-      y1[i] = qExp(-i/150.0);              // exponential envelope
-    }
-    // configure right and top axis to show ticks but no labels:
-    // (see QCPAxisRect::setupFullAxesBox for a quicker method to do this)
+    ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+
+
     ui->customPlot->xAxis2->setVisible(true);
     ui->customPlot->xAxis2->setTickLabels(false);
     ui->customPlot->yAxis2->setVisible(true);
@@ -218,25 +221,102 @@ void MainWindow::makeplot()
     // make left and bottom axes always transfer their ranges to right and top axes:
     connect(ui->customPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->xAxis2, SLOT(setRange(QCPRange)));
     connect(ui->customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->yAxis2, SLOT(setRange(QCPRange)));
-    // pass data points to graphs:
-    ui->customPlot->graph(0)->setData(x, y0);
-    ui->customPlot->graph(1)->setData(x, y1);
-    // let the ranges scale themselves so graph 0 fits perfectly in the visible area:
-    ui->customPlot->graph(0)->rescaleAxes();
-    // same thing for graph 1, but only enlarge ranges (in case graph 1 is smaller than graph 0):
-    ui->customPlot->graph(1)->rescaleAxes(true);
-    // Note: we could have also just called ui->customPlot->rescaleAxes(); instead
-    // Allow user to drag axis ranges with mouse, zoom with mouse wheel and select graphs by clicking:
-    ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
-
 
 }
 
 void MainWindow::updatePlot(){
 
+        updateMeasurementsSettings();
+        xRealPlot.resize(timerTiks+1);
+        realPlot.resize(timerTiks+1);
+        xRealPlot[timerTiks]  = xTeoryPlot[timerTiks];
+        realPlot[timerTiks] = teoryPlot[timerTiks];
+
+
+        if(timerTiks > 120){
+            xRealPlot.pop_front();
+            xTeoryPlot.pop_front();
+            realPlot.pop_front();
+            teoryPlot.pop_front();
+        }
+
+        ui->customPlot->graph(0)->setData(xRealPlot,realPlot);
+        ui->customPlot->replot();
+
+}
+
+void MainWindow::on_pushButton_ApplyCyclesSettings_clicked()
+{
+    updateMeasurementsSettings();
+
+    ui->customPlot->xAxis->setRange(0, LengthMeasurements);
+    xTeoryPlot.resize(LengthMeasurements);
+    teoryPlot.resize(LengthMeasurements);
+    for (int i = 0; i < LengthMeasurements; i++) {
+        xTeoryPlot[i] = i;
+    }
+    int counter = 0;
+    for (int j = 0 ; j < NumberCycles; j++) {
+        for (int i = 0; i < LengthXXX; i++) {
+            teoryPlot[counter++] = 24;
+        }
+        for (int i = 0; i < LengthTransition; i++) {
+            teoryPlot[counter++] = 27;
+        }
+        for (int i = 0; i < LengthXXX; i++) {
+            teoryPlot[counter++] = 30;
+        }
+        for (int i = 0; i < LengthTransition; i++) {
+            teoryPlot[counter++] = 27;
+        }
+    }
 
 
 
+
+
+    ui->customPlot->graph(1)->setData(xTeoryPlot, teoryPlot);
+    ui->customPlot->replot();
+
+
+}
+
+
+
+void MainWindow::on_pushButton_StartCycles_clicked()
+{
+    mTimerMeasurements->start();
+    ui->statusBar->showMessage("Measurements started", 2000);
+}
+
+void MainWindow::on_pushButton_StopCycles_clicked()
+{
+    mTimerMeasurements->stop();
+    ui->statusBar->showMessage("Measurements paused", 2000);
+}
+
+
+
+
+void MainWindow::updateMeasurementsStatus()
+{
+
+    updatePlot();
+    if((++timerTiks) >= LengthMeasurements){
+        mPowerSuply->Channel_Off(0);
+        mTimerMeasurements->stop();
+        timerTiks = 0;
+        ui->statusBar->showMessage("Measurements are finished", 2000);
+    }
+
+}
+
+void MainWindow::updateMeasurementsSettings()
+{
+    LengthXXX = ui->lineEdit_LengthXXX->text().toInt();
+    LengthTransition = ui->lineEdit_TransitionDuranion->text().toInt();
+    NumberCycles = ui->lineEdit_NumberCycles->text().toInt();
+    LengthMeasurements = (2*LengthXXX + 2*LengthTransition) * NumberCycles;
 
 
 }

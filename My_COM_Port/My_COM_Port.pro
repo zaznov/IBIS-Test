@@ -29,13 +29,15 @@ SOURCES += \
         mainwindow.cpp \
     comdialog.cpp \
     comport.cpp \
-    qcustomplot.cpp
+    qcustomplot.cpp \
+    powersuply.cpp
 
 HEADERS += \
         mainwindow.h \
     comdialog.h \
     comport.h \
-    qcustomplot.h
+    qcustomplot.h \
+    powersuply.h
 
 FORMS += \
         mainwindow.ui \
