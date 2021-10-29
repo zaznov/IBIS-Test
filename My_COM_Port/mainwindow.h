@@ -61,6 +61,8 @@ private slots:
 
     void updateMeasurementsStatus();
 
+    void updatePowerSupplyStatus(PS_Status);
+
     void on_pushButton_SendSerialB_clicked();
 
     void on_pushButton_received_clear_2_clicked();
@@ -75,13 +77,23 @@ private slots:
 
 
 
+    void on_pushButton_SetVoltageCH1_clicked();
+
+    void on_pushButton_SetCurrentCH1_clicked();
+
+    void on_pushButton_ONOFF_CH1_clicked();
+
+    void Button_ONOFF_CH1_Toggled(bool);
+
 private:
     Ui::MainWindow *ui;
     COMPort *serial_A;
     COMPort *serial_B;
+    COMPort *serial_PS;
     PowerSuply *mPowerSuply;
     QTimer *mTimerTests;
     QTimer *mTimerMeasurements;
+    QTimer *mTimerPowerSupply;
     int timerTiks;
     QVector<double> xTeoryPlot, xRealPlot, teoryPlot, realPlot;
 

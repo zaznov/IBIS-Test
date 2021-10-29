@@ -11,11 +11,14 @@ MainWindow::MainWindow(QWidget *parent) :
     timerTiks = 0;
     serial_A = new COMPort(this);
     serial_B = new COMPort(this);
-    mPowerSuply = new PowerSuply(serial_A, this);
+    serial_PS = new COMPort(this);
+    mPowerSuply = new PowerSuply(serial_PS, this);
+    /*Timers*/
     mTimerTests = new QTimer(this);
     mTimerTests->setInterval(1000);
     mTimerMeasurements = new QTimer(this);
     mTimerMeasurements->setInterval(1000);
+
     makeplot();
 
     /*setting Serial port speed*/
@@ -33,11 +36,18 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->comboBoxPorts->addItem(item.portName());
         ui->comboBoxPorts_2->addItem(item.portName());
     }
+
+    /*Buttons settings*/
+
+    ui->pushButton_ONOFF_CH1->setStyleSheet("background-color: white");
+    connect(ui->pushButton_ONOFF_CH1, SIGNAL(toggled(bool)), this, SLOT(Button_ONOFF_CH1_Toggled(bool)));
+
+    /*Connections*/
     connect(serial_A, SIGNAL(readyRead()), this, SLOT(readSerial_A()));
     connect(serial_B, SIGNAL(readyRead()), this, SLOT(readSerial_B()));
-
     connect(mTimerTests, SIGNAL(timeout()), this, SLOT(updateTimeTests()));
     connect(mTimerMeasurements, SIGNAL(timeout()), this, SLOT(updateMeasurementsStatus()));
+    connect(mPowerSuply, SIGNAL(newData(PS_Status)), this, SLOT(updatePowerSupplyStatus(PS_Status)));
 }
 
 MainWindow::~MainWindow()
@@ -303,7 +313,7 @@ void MainWindow::updateMeasurementsStatus()
 
     updatePlot();
     if((++timerTiks) >= LengthMeasurements){
-        mPowerSuply->Channel_Off(0);
+        mPowerSuply->channel_Off(CH1);
         mTimerMeasurements->stop();
         timerTiks = 0;
         ui->statusBar->showMessage("Measurements are finished", 2000);
@@ -317,6 +327,53 @@ void MainWindow::updateMeasurementsSettings()
     LengthTransition = ui->lineEdit_TransitionDuranion->text().toInt();
     NumberCycles = ui->lineEdit_NumberCycles->text().toInt();
     LengthMeasurements = (2*LengthXXX + 2*LengthTransition) * NumberCycles;
+
+
+}
+
+void MainWindow::updatePowerSupplyStatus(PS_Status status)
+{
+
+ui->lcdNumber_PowerCH1->display(status.Power);
+
+}
+
+void MainWindow::on_pushButton_SetVoltageCH1_clicked()
+{
+    mPowerSuply->setVoltage(ui->lineEdit_VoltageToSetCH1->text().toDouble(), CH1);
+    ui->lcdNumber_VoltageCH1->display(ui->lineEdit_VoltageToSetCH1->text().toDouble());
+
+}
+
+void MainWindow::on_pushButton_SetCurrentCH1_clicked()
+{
+    mPowerSuply->setCurrent(ui->lineEdit_CurrentToSetCH1->text().toDouble(), CH1);
+    ui->lcdNumber_CurrentCH1->display(ui->lineEdit_CurrentToSetCH1->text().toDouble());
+}
+
+
+
+void MainWindow::Button_ONOFF_CH1_Toggled(bool state){
+    if(state){
+        //Кнопка зажата
+        mPowerSuply->channel_On(CH1);
+        ui->pushButton_ONOFF_CH1->setStyleSheet("background-color: green");
+    }else{
+        //Кнопка отжата
+        mPowerSuply->channel_Off(CH1);
+        ui->pushButton_ONOFF_CH1->setStyleSheet("background-color: white");
+    }
+}
+
+
+
+
+
+
+
+
+void MainWindow::on_pushButton_ONOFF_CH1_clicked()
+{
 
 
 }
