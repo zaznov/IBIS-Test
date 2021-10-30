@@ -10,7 +10,7 @@
 #include "comport.h"
 #include "comdialog.h"
 #include "powersuply.h"
-
+#include <QLCDNumber>
 
 namespace Ui {
 class MainWindow;
@@ -30,6 +30,7 @@ private:
     void makeplot();
     void updatePlot();
     void updateMeasurementsSettings();
+    void displayValue(const double value, QLCDNumber *lcd);
 
 private slots:
     void on_pushAditionalSetings_clicked();
@@ -43,6 +44,8 @@ private slots:
     void readSerial_A();
 
     void readSerial_B();
+
+    void readSerial_PS();
 
     void on_pushButton_received_clear_clicked();
 
@@ -84,6 +87,12 @@ private slots:
     void on_pushButton_ONOFF_CH1_clicked();
 
     void Button_ONOFF_CH1_Toggled(bool);
+
+    void on_pushAditionalSetings_3_clicked();
+
+    void on_pushButtonOpenCOM_3_clicked();
+
+    void on_pushButtonCloseCOM_3_clicked();
 
 private:
     Ui::MainWindow *ui;

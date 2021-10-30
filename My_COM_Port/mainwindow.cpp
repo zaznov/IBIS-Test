@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QTextStream>
+using namespace std;
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -27,14 +29,18 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBoxBaudRate->addItems(SpeedPorts);
     ui->comboBoxBaudRate_2->clear();
     ui->comboBoxBaudRate_2->addItems(SpeedPorts);
+    ui->comboBoxBaudRate_3->clear();
+    ui->comboBoxBaudRate_3->addItems(SpeedPorts);
 
     /*setting Serial port names*/
     ui->comboBoxPorts->clear();
     ui->comboBoxPorts_2->clear();
+    ui->comboBoxPorts_3->clear();
     const auto listOfPorts = QSerialPortInfo::availablePorts();
     for(const auto &item : listOfPorts){
         ui->comboBoxPorts->addItem(item.portName());
         ui->comboBoxPorts_2->addItem(item.portName());
+        ui->comboBoxPorts_3->addItem(item.portName());
     }
 
     /*Buttons settings*/
@@ -45,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent) :
     /*Connections*/
     connect(serial_A, SIGNAL(readyRead()), this, SLOT(readSerial_A()));
     connect(serial_B, SIGNAL(readyRead()), this, SLOT(readSerial_B()));
+    connect(serial_PS, SIGNAL(readyRead()), this, SLOT(readSerial_PS()));
     connect(mTimerTests, SIGNAL(timeout()), this, SLOT(updateTimeTests()));
     connect(mTimerMeasurements, SIGNAL(timeout()), this, SLOT(updateMeasurementsStatus()));
     connect(mPowerSuply, SIGNAL(newData(PS_Status)), this, SLOT(updatePowerSupplyStatus(PS_Status)));
@@ -109,6 +116,20 @@ void MainWindow::on_pushButtonOpenCOM_2_clicked()
     };
 }
 
+void MainWindow::on_pushButtonOpenCOM_3_clicked()
+{
+    serial_PS->setPortName(ui->comboBoxPorts_3->currentText());
+    serial_PS->setBaudRate(ui->comboBoxBaudRate_3->currentText().toInt(), QSerialPort::AllDirections);
+    if(serial_PS->isOpen()) serial_PS->close();
+    serial_PS->open(QIODevice::ReadWrite);
+
+    if (serial_PS->isOpen()) {
+        ui->statusBar->showMessage("serial power supply port was open", 2000);
+    } else {
+        ui->statusBar->showMessage("Unable to open serial power supply port!", 2000);
+    };
+}
+
 void MainWindow::on_pushButtonCloseCOM_clicked()
 {
     serial_A->close();
@@ -131,6 +152,17 @@ void MainWindow::on_pushButtonCloseCOM_2_clicked()
     }
 }
 
+void MainWindow::on_pushButtonCloseCOM_3_clicked()
+{
+    serial_PS->close();
+    if (serial_PS->isOpen()) {
+        ui->statusBar->showMessage("Unable to close serial power supply port", 2000);
+    } else {
+        ui->statusBar->showMessage("serial power supply port was closed", 2000);
+        mTimerTests->stop();
+    }
+}
+
 void MainWindow::readSerial_A()
 {
     QByteArray responseData = serial_A->readAll();
@@ -145,6 +177,12 @@ void MainWindow::readSerial_B()
     ui->textEdit_received_2->insertPlainText(response);
 }
 
+void MainWindow::readSerial_PS()
+{
+    QByteArray responseData = serial_PS->readAll();
+    const QString response = QString::fromUtf8(responseData);
+    //ui->textEdit_received_2->insertPlainText(response);
+}
 
 
 void MainWindow::on_pushButton_received_clear_clicked()
@@ -176,7 +214,13 @@ void MainWindow::on_pushAditionalSetings_2_clicked()
     mComDialog.exec();
 }
 
-
+void MainWindow::on_pushAditionalSetings_3_clicked()
+{
+    ComDialog mComDialog(serial_PS);
+    mComDialog.setWindowTitle("Aditional COM settings");
+    mComDialog.setModal(true);
+    mComDialog.exec();
+}
 
 
 
@@ -333,22 +377,27 @@ void MainWindow::updateMeasurementsSettings()
 
 void MainWindow::updatePowerSupplyStatus(PS_Status status)
 {
-
-ui->lcdNumber_PowerCH1->display(status.Power);
-
+    displayValue(status.Power, ui->lcdNumber_PowerCH1);
 }
 
 void MainWindow::on_pushButton_SetVoltageCH1_clicked()
 {
     mPowerSuply->setVoltage(ui->lineEdit_VoltageToSetCH1->text().toDouble(), CH1);
-    ui->lcdNumber_VoltageCH1->display(ui->lineEdit_VoltageToSetCH1->text().toDouble());
+    displayValue(ui->lineEdit_VoltageToSetCH1->text().toDouble(), ui->lcdNumber_VoltageCH1);
 
+}
+
+void MainWindow:: displayValue(const double Value, QLCDNumber *lcd){
+    int ValueInt = static_cast<int>(Value);
+    QString part1 =  QString("%1").arg(ValueInt, 3, 10, QChar('0'));
+    QString part2 =  QString("%1").arg(qRound((Value - ValueInt) * 100), 2, 10, QChar('0'));
+    lcd->display(part1 + "." + part2);
 }
 
 void MainWindow::on_pushButton_SetCurrentCH1_clicked()
 {
     mPowerSuply->setCurrent(ui->lineEdit_CurrentToSetCH1->text().toDouble(), CH1);
-    ui->lcdNumber_CurrentCH1->display(ui->lineEdit_CurrentToSetCH1->text().toDouble());
+    displayValue(ui->lineEdit_CurrentToSetCH1->text().toDouble(), ui->lcdNumber_CurrentCH1);
 }
 
 
@@ -377,3 +426,9 @@ void MainWindow::on_pushButton_ONOFF_CH1_clicked()
 
 
 }
+
+
+
+
+
+
