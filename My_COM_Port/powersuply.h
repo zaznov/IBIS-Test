@@ -9,7 +9,7 @@
 
 
 enum ChannelNumber {
-    CH1,
+    CH1 = 1,
     CH2,
     CH3,
     CH4,
@@ -49,6 +49,7 @@ private:
     double readPower(ChannelNumber channalNumber);
     QTimer *mTimerPowerSupply;
     double pw;
+    COMPort *serialPS;
 
 private slots:
     void updatePowerSupplyStatus();

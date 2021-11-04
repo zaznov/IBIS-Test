@@ -48,6 +48,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->pushButton_ONOFF_CH1->setStyleSheet("background-color: white");
     connect(ui->pushButton_ONOFF_CH1, SIGNAL(toggled(bool)), this, SLOT(Button_ONOFF_CH1_Toggled(bool)));
 
+    /*Style settings*/
+    /*ui->groupBox_2->setStyleSheet("background-image:url(\":/resource/img/r&h.jpg\"); "
+                                  "background-repeat: no-repeat; "
+                                  "background-position: center; ");*/
+
+
+
+
+
+
     /*Connections*/
     connect(serial_A, SIGNAL(readyRead()), this, SLOT(readSerial_A()));
     connect(serial_B, SIGNAL(readyRead()), this, SLOT(readSerial_B()));
