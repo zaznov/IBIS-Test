@@ -11,8 +11,14 @@ class COMPort : public QSerialPort
     Q_OBJECT
 public:
     COMPort(QWidget *parent);
-    void DataRead();
 
+
+signals:
+  void newData(const QString &str);
+
+public slots:
+  void DataRead(void);
+  void writeDataToSerial(const QString &);
 };
 
 #endif // COMPORT_H

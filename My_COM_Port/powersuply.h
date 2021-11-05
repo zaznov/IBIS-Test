@@ -50,13 +50,19 @@ private:
     QTimer *mTimerPowerSupply;
     double pw;
     COMPort *serialPS;
+    double VoltageActual;
+    double CurrentActual;
+    double PowerActual;
+    bool StatusActual;
 
 private slots:
     void updatePowerSupplyStatus();
+    //void readFromSerial_PS(const QString &);
 
 
 signals:
     void newData(PS_Status);
+    void writeToSerial_PS(const QString &str);
 
 public slots:
 };

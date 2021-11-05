@@ -32,6 +32,10 @@ private:
     void updateMeasurementsSettings();
     void displayValue(const double value, QLCDNumber *lcd);
 
+signals:
+    void writeToSerial_A(const QString &str);
+    void writeToSerial_B(const QString &str);
+
 private slots:
     void on_pushAditionalSetings_clicked();
 
@@ -41,11 +45,11 @@ private slots:
 
     void on_pushButtonCloseCOM_clicked();
 
-    void readSerial_A();
+    void readFromSerial_A(const QString &str);
 
-    void readSerial_B();
+    void readFromSerial_B(const QString &str);
 
-    void readSerial_PS();
+    void readFromSerial_PS(const QString &str);
 
     void on_pushButton_received_clear_clicked();
 
@@ -110,6 +114,10 @@ private:
     int LengthTransition;
     int NumberCycles;
     int LengthMeasurements;
+
+    QThread *mThreadSerialA;
+    QThread *mThreadSerialB;
+    QThread *mThreadSerialPS;
 
 
 

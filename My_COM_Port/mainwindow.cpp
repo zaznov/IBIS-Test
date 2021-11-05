@@ -14,6 +14,15 @@ MainWindow::MainWindow(QWidget *parent) :
     serial_A = new COMPort(this);
     serial_B = new COMPort(this);
     serial_PS = new COMPort(this);
+
+    /*Threads*/
+    mThreadSerialA= new QThread;
+    mThreadSerialB= new QThread;
+    mThreadSerialPS= new QThread;
+    /*serial_A->moveToThread(mThreadSerialA);
+    serial_B->moveToThread(mThreadSerialB);
+    serial_PS->moveToThread(mThreadSerialPS);*/
+
     mPowerSuply = new PowerSuply(serial_PS, this);
     /*Timers*/
     mTimerTests = new QTimer(this);
@@ -59,18 +68,31 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     /*Connections*/
-    connect(serial_A, SIGNAL(readyRead()), this, SLOT(readSerial_A()));
-    connect(serial_B, SIGNAL(readyRead()), this, SLOT(readSerial_B()));
-    connect(serial_PS, SIGNAL(readyRead()), this, SLOT(readSerial_PS()));
+    connect(serial_A, SIGNAL(newData(const QString &)), this, SLOT(readFromSerial_A(const QString &)));
+    connect(serial_B, SIGNAL(newData(const QString &)), this, SLOT(readFromSerial_B(const QString &)));
+
+
+
+    connect(this, SIGNAL(writeToSerial_A(const QString &)), serial_A, SLOT(writeDataToSerial(const QString &)));
+    connect(this, SIGNAL(writeToSerial_B(const QString &)), serial_B, SLOT(writeDataToSerial(const QString &)));
+
+
     connect(mTimerTests, SIGNAL(timeout()), this, SLOT(updateTimeTests()));
     connect(mTimerMeasurements, SIGNAL(timeout()), this, SLOT(updateMeasurementsStatus()));
     connect(mPowerSuply, SIGNAL(newData(PS_Status)), this, SLOT(updatePowerSupplyStatus(PS_Status)));
+
+
+
 }
 
 MainWindow::~MainWindow()
 {
     serial_A->close();
     serial_B->close();
+    serial_PS->close();
+    mThreadSerialA->exit();
+    mThreadSerialB->exit();
+    mThreadSerialPS->exit();
     delete ui;
 }
 
@@ -104,6 +126,8 @@ void MainWindow::on_pushButtonOpenCOM_clicked()
 
     if (serial_A->isOpen()) {
         ui->statusBar->showMessage("serial A port was open", 2000);
+        serial_A->moveToThread(mThreadSerialA);
+        mThreadSerialA->start();
         if (serial_B->isOpen()) mTimerTests->start();
     } else {
         ui->statusBar->showMessage("Unable to open serial A port!", 2000);
@@ -120,6 +144,8 @@ void MainWindow::on_pushButtonOpenCOM_2_clicked()
 
     if (serial_B->isOpen()) {
         ui->statusBar->showMessage("serial B port was open", 2000);
+        serial_B->moveToThread(mThreadSerialB);
+        mThreadSerialB->start();
         if (serial_A->isOpen()) mTimerTests->start();
     } else {
         ui->statusBar->showMessage("Unable to open serial B port!", 2000);
@@ -135,6 +161,8 @@ void MainWindow::on_pushButtonOpenCOM_3_clicked()
 
     if (serial_PS->isOpen()) {
         ui->statusBar->showMessage("serial power supply port was open", 2000);
+        serial_PS->moveToThread(mThreadSerialPS);
+        mThreadSerialPS->start();
     } else {
         ui->statusBar->showMessage("Unable to open serial power supply port!", 2000);
     };
@@ -148,6 +176,7 @@ void MainWindow::on_pushButtonCloseCOM_clicked()
     } else {
         ui->statusBar->showMessage("serial A port was closed", 2000);
         mTimerTests->stop();
+        mThreadSerialA->exit();
     }
 }
 
@@ -159,6 +188,7 @@ void MainWindow::on_pushButtonCloseCOM_2_clicked()
     } else {
         ui->statusBar->showMessage("serial B port was closed", 2000);
         mTimerTests->stop();
+        mThreadSerialB->exit();
     }
 }
 
@@ -169,29 +199,21 @@ void MainWindow::on_pushButtonCloseCOM_3_clicked()
         ui->statusBar->showMessage("Unable to close serial power supply port", 2000);
     } else {
         ui->statusBar->showMessage("serial power supply port was closed", 2000);
-        mTimerTests->stop();
+        mThreadSerialPS->exit();
     }
 }
 
-void MainWindow::readSerial_A()
+void MainWindow::readFromSerial_A(const QString &str)
 {
-    QByteArray responseData = serial_A->readAll();
-    const QString response = QString::fromUtf8(responseData);
-    ui->textEdit_received->insertPlainText(response);
+    ui->textEdit_received->insertPlainText(str);
 }
-
-void MainWindow::readSerial_B()
+void MainWindow::readFromSerial_B(const QString &str)
 {
-    QByteArray responseData = serial_B->readAll();
-    const QString response = QString::fromUtf8(responseData);
-    ui->textEdit_received_2->insertPlainText(response);
+    ui->textEdit_received_2->insertPlainText(str);
 }
-
-void MainWindow::readSerial_PS()
+void MainWindow::readFromSerial_PS(const QString &str)
 {
-    QByteArray responseData = serial_PS->readAll();
-    const QString response = QString::fromUtf8(responseData);
-    //ui->textEdit_received_2->insertPlainText(response);
+
 }
 
 
@@ -240,7 +262,8 @@ void MainWindow::on_pushButton_SendSerialA_clicked()
     if(ui->checkBox_LF->isChecked()){
         stringToSend += '\n';
     }
-    serial_A->write(stringToSend.toUtf8());
+    emit writeToSerial_A(stringToSend);
+    //serial_A->write(stringToSend.toUtf8());
     ui->textEdit_transmitted->insertPlainText(stringToSend);
 }
 
@@ -252,7 +275,8 @@ void MainWindow::on_pushButton_SendSerialB_clicked()
     if(ui->checkBox_LF_2->isChecked()){
         stringToSend += '\n';
     }
-    serial_B->write(stringToSend.toUtf8());
+    emit writeToSerial_B(stringToSend);
+    //serial_B->write(stringToSend.toUtf8());
     ui->textEdit_transmitted_2->insertPlainText(stringToSend);
 }
 
@@ -436,6 +460,7 @@ void MainWindow::on_pushButton_ONOFF_CH1_clicked()
 
 
 }
+
 
 
 
