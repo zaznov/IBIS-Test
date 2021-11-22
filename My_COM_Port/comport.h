@@ -19,6 +19,9 @@ signals:
 public slots:
   void DataRead(void);
   void writeDataToSerial(const QString &);
+  void ClosePort();
+  void SetSerial(const QString &name, qint32 baudRate, QSerialPort::Directions directions);
+  void OpenPort();
 };
 
 #endif // COMPORT_H

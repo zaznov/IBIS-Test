@@ -33,10 +33,16 @@ private:
     void displayValue(const double value, QLCDNumber *lcd);
 
 signals:
+    void SetSerial_A(const QString &name, qint32 baudRate, QSerialPort::Directions directions);
+    void SetSerial_B(const QString &name, qint32 baudRate, QSerialPort::Directions directions);
     void writeToSerial_A(const QString &str);
     void writeToSerial_B(const QString &str);
+    void CloseSerial_A();
+    void CloseSerial_B();
+    void OpenPort_A();
 
 private slots:
+
     void on_pushAditionalSetings_clicked();
 
     void on_pushButtonRefreshCOM_clicked();

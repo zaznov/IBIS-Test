@@ -113,10 +113,16 @@
           <property name="text">
            <string>Open</string>
           </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QPushButton" name="pushButtonCloseCOM">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>Close</string>
           </property>
@@ -296,7 +302,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">

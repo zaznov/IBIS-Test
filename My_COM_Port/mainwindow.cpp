@@ -19,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent) :
     mThreadSerialA= new QThread;
     mThreadSerialB= new QThread;
     mThreadSerialPS= new QThread;
+    serial_A->moveToThread(mThreadSerialA);
+    mThreadSerialA->start();
     /*serial_A->moveToThread(mThreadSerialA);
     serial_B->moveToThread(mThreadSerialB);
     serial_PS->moveToThread(mThreadSerialPS);*/
@@ -70,11 +72,12 @@ MainWindow::MainWindow(QWidget *parent) :
     /*Connections*/
     connect(serial_A, SIGNAL(newData(const QString &)), this, SLOT(readFromSerial_A(const QString &)));
     connect(serial_B, SIGNAL(newData(const QString &)), this, SLOT(readFromSerial_B(const QString &)));
-
-
-
     connect(this, SIGNAL(writeToSerial_A(const QString &)), serial_A, SLOT(writeDataToSerial(const QString &)));
     connect(this, SIGNAL(writeToSerial_B(const QString &)), serial_B, SLOT(writeDataToSerial(const QString &)));
+    connect(this, SIGNAL(CloseSerial_A()), serial_A, SLOT(ClosePort()));
+    connect(this, SIGNAL(CloseSerial_B()), serial_B, SLOT(ClosePort()));
+    connect(this, SIGNAL(OpenPort_A()), serial_A, SLOT(OpenPort()));
+
 
 
     connect(mTimerTests, SIGNAL(timeout()), this, SLOT(updateTimeTests()));
@@ -87,7 +90,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    serial_A->close();
+    emit CloseSerial_A();
     serial_B->close();
     serial_PS->close();
     mThreadSerialA->exit();
@@ -119,15 +122,21 @@ void MainWindow::on_pushButtonRefreshCOM_clicked()
 
 void MainWindow::on_pushButtonOpenCOM_clicked()
 {
-    serial_A->setPortName(ui->comboBoxPorts->currentText());
-    serial_A->setBaudRate(ui->comboBoxBaudRate->currentText().toInt(), QSerialPort::AllDirections);
-    if(serial_A->isOpen()) serial_A->close();
-    serial_A->open(QIODevice::ReadWrite);
+    //serial_A->setPortName(ui->comboBoxPorts->currentText());
+    //serial_A->setBaudRate(ui->comboBoxBaudRate->currentText().toInt(), QSerialPort::AllDirections);
+    SetSerial_A(ui->comboBoxPorts->currentText(),
+                ui->comboBoxBaudRate->currentText().toInt(),
+                QSerialPort::AllDirections);
 
+    if(serial_A->isOpen()) emit CloseSerial_A();
+    //serial_A->open(QIODevice::ReadWrite);
+    emit OpenPort_A();
     if (serial_A->isOpen()) {
         ui->statusBar->showMessage("serial A port was open", 2000);
-        serial_A->moveToThread(mThreadSerialA);
-        mThreadSerialA->start();
+        //serial_A->moveToThread(mThreadSerialA);
+        //mThreadSerialA->start();
+        ui->pushButtonOpenCOM->setEnabled(false);
+        ui->pushButtonCloseCOM->setEnabled(true);
         if (serial_B->isOpen()) mTimerTests->start();
     } else {
         ui->statusBar->showMessage("Unable to open serial A port!", 2000);
@@ -170,19 +179,23 @@ void MainWindow::on_pushButtonOpenCOM_3_clicked()
 
 void MainWindow::on_pushButtonCloseCOM_clicked()
 {
-    serial_A->close();
+    emit CloseSerial_A();
+    Sleep(1);
     if (serial_A->isOpen()) {
         ui->statusBar->showMessage("Unable to close serial A port", 2000);
     } else {
         ui->statusBar->showMessage("serial A port was closed", 2000);
         mTimerTests->stop();
-        mThreadSerialA->exit();
+        mThreadSerialA->terminate();
+        ui->pushButtonOpenCOM->setEnabled(true);
+        ui->pushButtonCloseCOM->setEnabled(false);
     }
 }
 
 void MainWindow::on_pushButtonCloseCOM_2_clicked()
 {
-    serial_B->close();
+    emit CloseSerial_B();
+    Sleep(1);
     if (serial_B->isOpen()) {
         ui->statusBar->showMessage("Unable to close serial B port", 2000);
     } else {
@@ -460,9 +473,6 @@ void MainWindow::on_pushButton_ONOFF_CH1_clicked()
 
 
 }
-
-
-
 
 
 
